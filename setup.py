@@ -18,6 +18,6 @@ setup(name="aethertool", version="0.5",
     py_modules=['disorient'],
     scripts=['aethertool.py'],
     url="http://emergent.unpy.net/software/aethertool/",
-    license="GPL with some modules 'similar to the FreeBSD license'",
+    license="GPL",
 )
 # vim:sw=4:sts=4:et
