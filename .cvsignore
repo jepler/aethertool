@@ -1,0 +1,12 @@
+.gdbinit
+MANIFEST
+.xvpics
+.xvpthumb
+dist
+build
+Makefile
+*.out
+.*.sw?
+*.pyc
+*.o
+*.so
