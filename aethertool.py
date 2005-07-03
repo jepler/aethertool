@@ -36,7 +36,6 @@ def set_default(name):
 
 def load_config(config):
     global AETHER_TOP, PASS, thumb_geometry
-    #print "load_config", repr(config)
     AETHER_TOP = config[0]
     PASS = config[1] or getpass.getpass()
     thumb_geometry = config[2] or thumb_geometry
@@ -111,11 +110,6 @@ def preview_text(page, newtext):
     cgi.escape(newtext, True))
 
 def upload_file(page, local, remote, quiet=0):
-#    if not quiet:
-#        if os.path.basename(local) == remote:
-#            print "uploading %s on page %s" % (remote, page)
-#        else:
-#            print "uploading %s as %s on page %s" % (local, remote, page)
     qPASS = quote_paranoid(PASS)
     qpage = quote_paranoid(page)
     url = AETHER_TOP + "?action=attachments&password=%s&name=%s" % (qPASS,qpage)
@@ -130,13 +124,25 @@ def upload_file(page, local, remote, quiet=0):
         print "   " + AETHER_TOP + "-files/%s/%s" % (page, remote)
 
 def put_page(page, filename):
-    u = save_text(page, open(filename).read())
-    urllib2.urlopen(u)
+    if hasattr(filename, 'read'):
+        contents = filename.read()
+    elif filename is None:
+        contents = ''
+    else:
+        contents = open(filename).read()
+    print "size of new contents", len(contents)
+    u = save_text(page, contents)
+    try:
+        urllib2.urlopen(u)
+    except urllib2.HTTPError, detail:
+        if detail.code != 404 or contents:
+            raise
+        print "(404 error while deleting; this is normal)"
 
 def edit_page(page):
     t = get_current_text(page)
 
-    name = os.path.join(tempdir, page.replace("/", "_") + ".ae")
+    name = os.path.join(tempdir, (page.replace("/", "_") or "index") + ".ae")
     fd = open(name, "w")
     fd.write(t)
     fd.close()
@@ -183,12 +189,10 @@ def optimize(f):
         elif o == 6:
             command.extend(['-rotate', '90'])
         command.append(f)
-        #print "Optimize: %s" % (" ".join(command))
         os.spawnvp(os.P_WAIT, command[0], command)
         if o in (6, 8): disorient.clear_exif_orientation(t)
         return t
     if ext in ['.png']:
-        #print "Optimize: pngcrush"
         os.spawnvp(os.P_WAIT, "pngcrush", ["pngcrush", "-q", "-reduce", f, t])
         return t
     # XXX convert gif to png?
@@ -200,50 +204,75 @@ atexit.register(shutil.rmtree, tempdir)
 def usage(exitcode=1):
     print """\
 Usage:
-    %(name)s pagename
-        Edit the page 'pagename'.  Use '' (the empty page) to edit the front
-        page.  To preview the changes in your browser, save the file.
-        Use the browser's save button in the browser to save the changes.
-    %(name)s -p pagename < contents
-        Put new contents to 'pagename' from standard input.
-    %(name)s -n [-k suffix] blogpage
-        Create a new blog entry on 'blogpage', optonally with 'suffix' added
+    %(name)s [-e] page
+        Edit 'page'.  Use '/' (forward slash) to edit the front page.  To
+        preview the changes in your browser, save the file.  Use the browser's
+        save button in the browser to save the changes.
+    %(name)s -p page< contents
+        Put new contents to 'page' from standard input.
+    %(name)s -n [-k suffix] blog
+        Create a new blog entry on 'blog', optonally with 'suffix' added
         to the name of the created page.
-    %(name)s -u [-t] [-g WxH] pagename file[=localfile] file...
-        Upload files to 'pagename'.  Create thumbnails unless -t is specified.
-        Use -g to specify the maximum thumbnail size, currently %(thumbsize)s.
+    %(name)s -u [-t] [-g WxH] pagefile[=localfile] file...
+        Upload files to 'page'.  Create thumbnails unless -t is specified.  Use
+        -g to specify the maximum thumbnail size, currently %(thumbsize)s.
+    %(name)s -d page
+        Delete 'page'
     %(name)s -c configname [other usage from above]
         Use the configuration 'configname' instead of the default
+        For help on the syntax of configuration files, use "-c help".
+""" % {'name': os.path.basename(sys.argv[0]), 'thumbsize': thumb_geometry}
+    raise SystemExit, exitcode
 
-The configuration file ~/.aetherrc looks like this:
+def help_config():
+    print """\
+The configuration file ~/.aetherrc is a python script.  A typical one might 
+look like this (without the indentation):
     add_config('configname', 'http://www.example.com/index.cgi', 'password')
     set_default('configname')
 The configuration is guessed from the script's name, otherwise the value
 given by set_default is used.  If only one call to add_configuration is
-present, then that configuration is the default.\
-""" % {'name': os.path.basename(sys.argv[0]), 'thumbsize': thumb_geometry}
-    raise SystemExit, exitcode
+present, then that configuration is the default.
+
+If 'password' is not specified, then it is prompted when the script is run.
+"""
+    print "The following configurations are defined:"
+    for k in config: print "\t" + k
+    print
+    print "When invoked as '%s', the default configuration is '%s'" % (
+        os.path.basename(sys.argv[0]), default_config)
+    raise SystemExit, 0
+
 try:
-    opts, args = getopt.getopt(argv[1:], "+tnuk:g:c:h?")
+    opts, args = getopt.getopt(argv[1:], "+c: denpu t k: g: c: h?")
 except getopt.GetoptError, detail:
     print >> sys.stderr, "%s:" % os.path.basename(sys.argv[0]), detail
     usage()
-do_new_entry = do_upload = False
+
+MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE = range(5)
+mode = MODE_EDIT
+
 do_thumbnail = True
 for k, v in opts:
     if k == "-c": config_name = v
-    if k == "-p": do_put = not do_put
-    if k == "-n": do_new_entry = not do_new_entry
-    if k == "-u": do_upload = not do_upload
+
+    if k == "-d": mode = MODE_DELETE
+    if k == "-e": mode = MODE_EDIT
+    if k == "-n": mode = MODE_NEW_ENTRY
+    if k == "-p": mode = MODE_PUT
+    if k == "-u": mode = MODE_UPLOAD
+
     if k == "-t": do_thumbnail = not do_thumbnail
     if k == "-k": suffix = "-" + v.replace(" ", "-")
     if k == "-g": thumb_geometry = v
     if k == "-?" or k == "-h": usage(0)
 
+if config_name == "help":
+    help_config()
 
 load_config(config[config_name])
 
-if do_upload:
+if mode == MODE_UPLOAD:
     page = args[0]
     for filename in args[1:]:
         if "=" in filename:
@@ -264,18 +293,23 @@ if do_upload:
                 ["convert", "-geometry", thumb_geometry, local, localthumb])
             localthumb = optimize(localthumb)
             upload_file(page, localthumb, thumb, True)
-else:
-    if do_new_entry:
-        if args:
-            page = args[0] + "/0" + str(int(time.time())) + suffix
-        else:
-            page = "0" + str(int(time.time())) + suffix
+elif mode == MODE_NEW_ENTRY:
+    if args:
+        page = args[0] + "/0" + str(int(time.time())) + suffix
     else:
-        if args:
-            page = args[0]
-        else:
-            page = "sandbox"
+        page = "0" + str(int(time.time())) + suffix
+elif mode == MODE_EDIT:
+    if args:
+        page = args[0]
+    else:
+        page = "sandbox"
     page = page.strip("/")
     edit_page(page)
-
+elif mode == MODE_PUT:
+    page = args[0].strip("/")
+    put_page(page, sys.stdin)
+elif mode == MODE_DELETE:
+    page = args[0].strip("/")
+    put_page(page, None)
+    
 # vim:sw=4:sts=4:et
