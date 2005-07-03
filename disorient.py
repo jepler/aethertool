@@ -15,6 +15,10 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# This program is a new implementation of the method described at 
+#  http://sylvana.net/jpegcrop/exif_orientation.html
+# and in the "jpegexiforient.c" source code.
+
 EXIF_MAGIC = '\xff\xd8\xff\xe1'      #  JPEG SOI + Exif APP1
 EXIF_MAGIC_2 = 'Exif\0\0'
 
