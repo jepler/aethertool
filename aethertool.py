@@ -137,7 +137,6 @@ def put_page(page, filename):
     except urllib2.HTTPError, detail:
         if detail.code != 404 or contents:
             raise
-        print "(404 error while deleting; this is normal)"
 
 def edit_page(page):
     t = get_current_text(page)
@@ -298,6 +297,7 @@ elif mode == MODE_NEW_ENTRY:
         page = args[0] + "/0" + str(int(time.time())) + suffix
     else:
         page = "0" + str(int(time.time())) + suffix
+    edit_page(page)
 elif mode == MODE_EDIT:
     if args:
         page = args[0]
