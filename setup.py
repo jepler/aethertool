@@ -13,7 +13,7 @@ def require_program(s):
 for p in ("pngcrush", "jpegtran", "convert"):
     require_program(p)
 
-setup(name="aethertool", version="0.5",
+setup(name="aethertool", version="0.6",
     author="Jeff Epler", author_email = "jepler@unpythonic.net",
     py_modules=['disorient'],
     scripts=['aethertool.py'],
