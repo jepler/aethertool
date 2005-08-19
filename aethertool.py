@@ -249,9 +249,11 @@ except getopt.GetoptError, detail:
     usage()
 
 MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE = range(5)
-mode = MODE_EDIT
 
+mode = MODE_EDIT
+suffix = ""
 do_thumbnail = True
+
 for k, v in opts:
     if k == "-c": config_name = v
 
