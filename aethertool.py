@@ -91,7 +91,7 @@ def save_text(page, newtext):
 def preview_text(page, newtext):
     return """<HTML><BODY onload="document.forms[0].submit()"
     <DIV style="display: none">
-    <FORM method=post accept-charset=\"utf-8\" action=\"%s\">
+    <FORM method=post accept-charset=\"UTF-8\" action=\"%s\">
         <input type=hidden name=action value=edit>
         <input type=hidden name=password value=\"%s\">
         <input name=newname value=\"%s\">
