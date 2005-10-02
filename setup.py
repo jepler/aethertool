@@ -1,6 +1,14 @@
 from distutils.core import setup
 
 import os
+def require_module(m):
+    try:
+        __import__(m)
+    except ImportError:
+        print "Warning: The required module %r is not available." % m
+        print "The software will probably not work without it."
+        return False
+
 def require_program(s):
     for el in os.environ['PATH'].split(os.pathsep):
         j = os.path.join(el, s)
@@ -15,7 +23,7 @@ for p in ("pngcrush", "jpegtran", "convert"):
 
 setup(name="aethertool", version="0.6",
     author="Jeff Epler", author_email = "jepler@unpythonic.net",
-    py_modules=['disorient'],
+    py_modules=['disorient', 'ClientForm'],
     scripts=['aethertool.py'],
     url="http://emergent.unpy.net/software/aethertool/",
     license="GPL",

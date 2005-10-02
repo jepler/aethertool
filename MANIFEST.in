@@ -1,1 +1,1 @@
-include aethertool.py disorient.py setup.py README
+include aethertool.py disorient.py setup.py ClientForm.py README
