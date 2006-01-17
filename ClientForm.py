@@ -736,6 +736,8 @@ class _AbstractFormParser:
             raise ParseError("end of TEXTAREA before start")
         controls = self._current_form[2]
         name = self._textarea.get("name")
+        import cgi
+        self._textarea['value'] = cgi.escape(self._textarea.get('value', ''))
         controls.append(("textarea", name, self._textarea))
         self._textarea = None
 
