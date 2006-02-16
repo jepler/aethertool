@@ -20,6 +20,7 @@ import getpass, urllib2, ClientForm, tempfile, os, time, webbrowser, sys
 import getopt, cgi, re, disorient
 import shutil, atexit
 from sys import argv
+from htmlentitydefs import name2codepoint
 
 EDITOR = os.environ.get("EDITOR", "vim")
 
@@ -67,8 +68,12 @@ def webbrowser_open(u):
     os.spawnvp(os.P_NOWAIT, "firefox", ["firefox", u])
     time.sleep(browser_wait)
 
+def get_edit_url(page):
+    return AETHER_TOP + "?action=edit&password=%s&name=%s" % (PASS, page)
+
 def get_edit_form(page):
-    url = AETHER_TOP + "?action=edit&password=%s&name=%s" % (PASS, page)
+    url = get_edit_url(page)
+
     forms = ClientForm.ParseResponse(urllib2.urlopen(url))
     for f in forms:
         try:
@@ -79,9 +84,30 @@ def get_edit_form(page):
             return f
     print "Required form not found.  AETHER_TOP or password may be incorrect."
 
+entity_re = re.compile("&(#[0-9]+|[a-zA-Z0-9]+);?")
+
+def unescape_replace(m):
+    g = m.group(1)
+    if g.startswith("#"):
+        return unichr(int(g[1:])).encode('utf-8')
+    codepoint = name2codepoint.get(g)
+    if codepoint is None: return g
+    return unichr(codepoint).encode('utf-8')
+
+def unescape(s):
+    return entity_re.sub(unescape_replace, s)
+
+current_text_pat = re.compile(
+    "<textarea[^>]*>"
+    "([^<]*)"
+    "</textarea>", re.I | re.M | re.DOTALL)
+
 def get_current_text(page):
-    f = get_edit_form(page)
-    return f.get_value("text")
+    url = get_edit_url(page)
+    page = urllib2.urlopen(url).read()
+    m = current_text_pat.search(page).group(1)
+    m = unescape(m)
+    return m
 
 def save_text(page, newtext):
     f = get_edit_form(page)
@@ -89,9 +115,11 @@ def save_text(page, newtext):
     return f.click("save")
 
 def preview_text(page, newtext):
-    return """<HTML><BODY onload="document.forms[0].submit()"
+    return """<HTML>
+    <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <BODY onload="document.forms[0].submit()"
     <DIV style="display: none">
-    <FORM method=post accept-charset=\"UTF-8\" action=\"%s\">
+    <FORM method=post accept-charset=\"UTF-8\" action=\"%s#buttonsandpreview\">
         <input type=hidden name=action value=edit>
         <input type=hidden name=password value=\"%s\">
         <input name=newname value=\"%s\">
