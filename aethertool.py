@@ -271,12 +271,12 @@ If 'password' is not specified, then it is prompted when the script is run.
     raise SystemExit, 0
 
 try:
-    opts, args = getopt.getopt(argv[1:], "+c: denpu t k: g: c: h?")
+    opts, args = getopt.getopt(argv[1:], "+c: denpu U t k: g: c: h?")
 except getopt.GetoptError, detail:
     print >> sys.stderr, "%s:" % os.path.basename(sys.argv[0]), detail
     usage()
 
-MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE = range(5)
+MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE, MODE_URL = range(6)
 
 mode = MODE_EDIT
 suffix = ""
@@ -291,6 +291,8 @@ for k, v in opts:
     if k == "-p": mode = MODE_PUT
     if k == "-u": mode = MODE_UPLOAD
 
+    if k == "-U": mode = MODE_URL
+
     if k == "-t": do_thumbnail = not do_thumbnail
     if k == "-k": suffix = "-" + v.replace(" ", "-")
     if k == "-g": thumb_geometry = v
@@ -301,7 +303,9 @@ if config_name == "help":
 
 load_config(config[config_name])
 
-if mode == MODE_UPLOAD:
+if mode == MODE_URL:
+    print get_edit_url("")
+elif mode == MODE_UPLOAD:
     page = args[0]
     for filename in args[1:]:
         if "=" in filename:
