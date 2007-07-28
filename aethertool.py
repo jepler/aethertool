@@ -25,6 +25,8 @@ from htmlentitydefs import name2codepoint
 EDITOR = os.environ.get("EDITOR", "vim")
 
 thumb_geometry = "300x300"
+medium_geometry = "900x900"
+
 config = {}
 default_config = 'default'
 browser_wait = 5
@@ -167,6 +169,8 @@ def put_page(page, filename):
             raise
 
 def edit_page(page):
+    open(os.path.expanduser("~/.aetherlast"), "w").write(page)
+
     t = get_current_text(page)
 
     name = os.path.join(tempdir, (page.replace("/", "_") or "index") + ".ae")
@@ -235,14 +239,16 @@ Usage:
         Edit 'page'.  Use '/' (forward slash) to edit the front page.  To
         preview the changes in your browser, save the file.  Use the browser's
         save button in the browser to save the changes.
-    %(name)s -p page< contents
+    %(name)s -p page < contents
         Put new contents to 'page' from standard input.
     %(name)s -n [-k suffix] blog
         Create a new blog entry on 'blog', optonally with 'suffix' added
         to the name of the created page.
-    %(name)s -u [-t] [-g WxH] pagefile[=localfile] file...
-        Upload files to 'page'.  Create thumbnails unless -t is specified.  Use
-        -g to specify the maximum thumbnail size, currently %(thumbsize)s.
+    %(name)s -u [-t] [-g WxH] page file[=localfile] file...
+    %(name)s -u [-t] [-g WxH] -l file[=localfile] file...
+        Upload files to 'page' or the last page edited (-l).  Create thumbnails
+        unless -t is specified.  Use -g to specify the maximum thumbnail size,
+        currently %(thumbsize)s.
     %(name)s -d page
         Delete 'page'
     %(name)s -c configname [other usage from above]
@@ -271,7 +277,7 @@ If 'password' is not specified, then it is prompted when the script is run.
     raise SystemExit, 0
 
 try:
-    opts, args = getopt.getopt(argv[1:], "+c: denpu U t k: g: c: h?")
+    opts, args = getopt.getopt(argv[1:], "+c: denpul U t m:k: g: c: h?")
 except getopt.GetoptError, detail:
     print >> sys.stderr, "%s:" % os.path.basename(sys.argv[0]), detail
     usage()
@@ -296,8 +302,11 @@ for k, v in opts:
     if k == "-t": do_thumbnail = not do_thumbnail
     if k == "-k": suffix = "-" + v.replace(" ", "-")
     if k == "-g": thumb_geometry = v
+    if k == "-m": medium_geometry = v
     if k == "-?" or k == "-h": usage(0)
 
+    if k == "-l": 
+        args.insert(0, open(os.path.expanduser("~/.aetherlast")).read().strip())
 if config_name == "help":
     help_config()
 
@@ -319,13 +328,23 @@ elif mode == MODE_UPLOAD:
         upload_file(page, local, remote)
         if do_thumbnail and isimage(remote):
             base, ext = os.path.splitext(remote)
+
+            med = base + "-medium" + ext
+            localmed = os.path.join(tempdir, "medium" + ext)
+            #print "Creating medium image for", remote
+            os.spawnvp(os.P_WAIT, "convert", 
+                ["convert", "-geometry", medium_geometry, local, localmed])
+            localmed = optimize(localmed)
+            upload_file(page, localmed, med)
+
             thumb = base + "-small" + ext
             localthumb = os.path.join(tempdir, "thumb" + ext)
-            print "Creating thumbnail for", remote
+            #print "Creating thumbnail for", remote
             os.spawnvp(os.P_WAIT, "convert", 
                 ["convert", "-geometry", thumb_geometry, local, localthumb])
             localthumb = optimize(localthumb)
-            upload_file(page, localthumb, thumb, True)
+            upload_file(page, localthumb, thumb)
+
 elif mode == MODE_NEW_ENTRY:
     if args:
         page = args[0] + "/0" + str(int(time.time())) + suffix
