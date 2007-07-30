@@ -151,7 +151,10 @@ def upload_file(page, local, remote, quiet=0):
     if not quiet:
         print "Uploaded file is:"
         print "   [page %s] [file %s]" % (page, remote)
-        print "   " + AETHER_TOP + "-files/%s/%s" % (page, remote)
+        if AETHER_TOP.endswith("/"):
+            print "   " + AETHER_TOP + "files/%s/%s" % (page, remote)
+        else:
+            print "   " + AETHER_TOP + "-files/%s/%s" % (page, remote)
 
 def put_page(page, filename):
     if hasattr(filename, 'read'):
