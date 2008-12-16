@@ -65,6 +65,67 @@ def quote_paranoid(text):
                   chr(ord('a') + ord(char)%16)
 
     return result
+import httplib, mimetypes
+
+def post_multipart(host, selector, fields, files):
+    """
+    Post fields and files to an http host as multipart/form-data.
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return the server's response page.
+    """
+    content_type, body = encode_multipart_formdata(fields, files)
+    h = httplib.HTTPConnection(host)
+    headers = {
+        'Content-Type': content_type,
+        'Content-Length': len(body),
+        'User-Agent': 'Aethertool/0.9'}
+    h.request('POST', selector, body, headers)
+    #h.putrequest('POST', selector)
+    #h.putheader('content-type', content_type)
+    #h.putheader('content-length', str(len(body)))
+    #h.endheaders()
+    #h.send(body)
+    res = h.getresponse()
+    #errcode, errmsg, headers = h.getreply()
+    if res.status != 200:
+        raise RuntimeError, (res.status, res.reason, res.read())
+    return res.read()
+
+def encode_multipart_formdata(fields, files):
+    """
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return (content_type, body) ready for httplib.HTTP instance
+    """
+    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+    CRLF = '\r\n'
+    L = []
+    for (key, value) in fields:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"' % key)
+        L.append('')
+        L.append(value)
+    for (key, filename, value) in files:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        L.append('Content-Type: %s' % get_content_type(filename))
+        L.append('')
+        L.append(value)
+    L.append('--' + BOUNDARY + '--')
+    L.append('')
+    body = CRLF.join(L)
+    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+    return content_type, body
+
+def get_content_type(filename):
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+import urlparse
+
+def posturl(url, fields, files):
+    urlparts = urlparse.urlsplit(url)
+    return post_multipart(urlparts[1], urlparts[2], fields,files)
 
 def webbrowser_open(u):
     os.spawnvp(os.P_NOWAIT, "firefox", ["firefox", u])
@@ -142,12 +203,10 @@ def preview_text(page, newtext):
 def upload_file(page, local, remote, quiet=0):
     qPASS = quote_paranoid(PASS)
     qpage = quote_paranoid(page)
-    url = AETHER_TOP + "?action=attachments&password=%s&name=%s" % (qPASS,qpage)
-    forms = ClientForm.ParseResponse(urllib2.urlopen(url))
-    f = forms[0]
-    f.add_file(open(local, "rb"), filename=remote, name="file")
-    u = f.click("attach")
-    urllib2.urlopen(u)
+    url = AETHER_TOP
+    data = [('action', 'attach'), ('password', qPASS), ('name', qpage), ('nolisting', '1')]
+    fdata = [('file', remote, open(local, "rb").read())]
+    posturl(url, data, fdata)
     if not quiet:
         print "Uploaded file is:"
         print "   [page %s] [file %s]" % (page, remote)
