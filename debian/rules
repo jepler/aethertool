@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+
+PREFIX=debian/tmp/usr
+
+build:; @true
+install:
+	mkdir -p $(PREFIX)/share/python-support/aethertool
+	./setup.py install --prefix=$(PREFIX)
+
+binary-indep: install
+	(cd debian/tmp; find -not -type d) > debian/aethertool.files
+	dh_movefiles
+	dh_installchangelogs
+	dh_installdocs
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep
+
+clean:
+	dh_clean
+	rm -rf build dist 
+	rm -f debian/postinst.debhelper debian/prerm.debhelper
+
+.PHONY: build install binary binary-indep clean
+
+# vim:noet:ts=8:sts=8:sw=8:

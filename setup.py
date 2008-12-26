@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from distutils.core import setup
 
 import os
@@ -24,7 +26,7 @@ for p in ("pngcrush", "jpegtran", "convert"):
 setup(name="aethertool", version="0.6",
     author="Jeff Epler", author_email = "jepler@unpythonic.net",
     py_modules=['disorient', 'ClientForm'],
-    scripts=['aethertool.py'],
+    scripts=['aethertool'],
     url="http://emergent.unpy.net/software/aethertool/",
     license="GPL",
 )

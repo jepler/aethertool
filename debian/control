@@ -1,0 +1,13 @@
+Source: aethertool
+Section: web
+Priority: extra
+Maintainer: Jeff Epler <jepler@unpythonic.net>
+Build-Depends: python, python-support, debhelper
+XS-Python-Version: current
+Standards-Version: 2.0.0-rc
+
+Package: aethertool
+Depends: libjpeg-progs, pngcrush, imagemagick, python
+Section: web
+Architecture: all
+Description: commandline upload tool for aether cms
