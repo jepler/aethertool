@@ -416,7 +416,7 @@ elif mode == MODE_UPLOAD:
                 if os.stat(localthumb).st_size > os.stat(localthumbjpg).st_size:
                     localthumb = localthumbjpg
             localthumb = optimize(localthumb)
-            thumb = base + "-thumb" + os.path.splitext(localthumb)[1]
+            thumb = base + "-small" + os.path.splitext(localthumb)[1]
             upload_file(page, localthumb, thumb)
 
 elif mode == MODE_NEW_ENTRY:
