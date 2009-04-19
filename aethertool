@@ -391,20 +391,32 @@ elif mode == MODE_UPLOAD:
         if do_thumbnail and isimage(remote):
             base, ext = os.path.splitext(remote)
 
-            med = base + "-medium" + ext
             localmed = os.path.join(tempdir, "medium" + ext)
+            localmedjpg = os.path.join(tempdir, "medium" + ".jpg")
             #print "Creating medium image for", remote
             os.spawnvp(os.P_WAIT, "convert", 
                 ["convert", "-geometry", medium_geometry, local, localmed])
+            if localmed != localmedjpg:
+                os.spawnvp(os.P_WAIT, "convert", 
+                    ["convert", "-geometry", medium_geometry, local, localmedjpg])
+                if os.stat(localmed).st_size > os.stat(localmedjpg).st_size:
+                    localmed = localmedjpg
             localmed = optimize(localmed)
+            med = base + "-medium" + os.path.splitext(localmed)[1]
             upload_file(page, localmed, med)
 
-            thumb = base + "-small" + ext
             localthumb = os.path.join(tempdir, "thumb" + ext)
+            localthumbjpg = os.path.join(tempdir, "thumb" + ".jpg")
             #print "Creating thumbnail for", remote
             os.spawnvp(os.P_WAIT, "convert", 
                 ["convert", "-geometry", thumb_geometry, local, localthumb])
+            if localthumb != localthumbjpg:
+                os.spawnvp(os.P_WAIT, "convert", 
+                    ["convert", "-geometry", thumb_geometry, local, localthumbjpg])
+                if os.stat(localthumb).st_size > os.stat(localthumbjpg).st_size:
+                    localthumb = localthumbjpg
             localthumb = optimize(localthumb)
+            thumb = base + "-thumb" + os.path.splitext(localthumb)[1]
             upload_file(page, localthumb, thumb)
 
 elif mode == MODE_NEW_ENTRY:
