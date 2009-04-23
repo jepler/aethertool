@@ -30,18 +30,19 @@ medium_geometry = "900x900"
 config = {}
 default_config = 'default'
 browser_wait = 5
-def add_config(name, root, password=None, thumb_geometry=None):
-    config[name] = (root, password, thumb_geometry)
+def add_config(name, root, password=None, thumb_geometry=None, alternates=[]):
+    config[name] = (root, password, thumb_geometry, alternates)
 
 def set_default(name):
     global default_config
     default_config = name
 
-def load_config(config):
+def load_config(name):
+    c = config[name]
     global AETHER_TOP, PASS, thumb_geometry
-    AETHER_TOP = config[0]
-    PASS = config[1] or getpass.getpass()
-    thumb_geometry = config[2] or thumb_geometry
+    AETHER_TOP = c[0]
+    PASS = c[1] or getpass.getpass()
+    thumb_geometry = c[2] or thumb_geometry
 
 rcfile = os.path.join(os.environ.get('HOME', ''), ".aetherrc")
 if os.path.exists(rcfile): execfile(rcfile)
@@ -52,7 +53,8 @@ else:
 
 config_name = os.path.splitext(os.path.split(sys.argv[0])[1])[0]
 if len(config) == 1: default_config = config.keys()[0]
-if not config.has_key(config_name): config_name = default_config
+print config_name, config.keys()
+if not config.has_key(config_name): config_name = None
 
 def quote_paranoid(text):
     """ Convert utf-8 string to sequence of lower case English characters. """
@@ -231,7 +233,7 @@ def put_page(page, filename):
             raise
 
 def edit_page(page):
-    open(os.path.expanduser("~/.aetherlast"), "w").write(page)
+    open(os.path.expanduser("~/.aetherlast"), "w").write("%s\n%s\n" % (config_name, page))
 
     t = get_current_text(page)
 
@@ -338,6 +340,26 @@ If 'password' is not specified, then it is prompted when the script is run.
         os.path.basename(sys.argv[0]), default_config)
     raise SystemExit, 0
 
+def parse_url(u):
+    print "parse_url", u,
+    best = ''
+    for n, c in config.items():
+        root = c[0]
+        if u.startswith(root) and len(root) > len(best):
+            best = root
+            bestname = n
+            bestpage = u[len(root):]
+        for root in c[3]:
+            print root
+            if u.startswith(root) and len(root) > len(best):
+                best = root
+                bestname = n
+                bestpage = u[len(root):]
+    if best:
+        print bestname, bestpage
+        return bestname, bestpage
+    print "->", None
+
 try:
     opts, args = getopt.getopt(argv[1:], "+c: denpul U t m:k: g: c: h?")
 except getopt.GetoptError, detail:
@@ -368,11 +390,20 @@ for k, v in opts:
     if k == "-?" or k == "-h": usage(0)
 
     if k == "-l": 
-        args.insert(0, open(os.path.expanduser("~/.aetherlast")).read().strip())
+        config_name, page = open(os.path.expanduser("~/.aetherlast")).read().split()
+        args.insert(0, page)
+
+print config_name
+if config_name is None and args:
+    parsed = parse_url(args[0])
+    if parsed is not None:
+        config_name, args[0] = parsed
+if config_name is None: config_name = default_config
+
 if config_name == "help":
     help_config()
 
-load_config(config[config_name])
+load_config(config_name)
 
 if mode == MODE_URL:
     print get_edit_url("")
