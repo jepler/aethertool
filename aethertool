@@ -53,7 +53,6 @@ else:
 
 config_name = os.path.splitext(os.path.split(sys.argv[0])[1])[0]
 if len(config) == 1: default_config = config.keys()[0]
-print config_name, config.keys()
 if not config.has_key(config_name): config_name = None
 
 def quote_paranoid(text):
@@ -341,7 +340,6 @@ If 'password' is not specified, then it is prompted when the script is run.
     raise SystemExit, 0
 
 def parse_url(u):
-    print "parse_url", u,
     best = ''
     for n, c in config.items():
         root = c[0]
@@ -350,15 +348,12 @@ def parse_url(u):
             bestname = n
             bestpage = u[len(root):]
         for root in c[3]:
-            print root
             if u.startswith(root) and len(root) > len(best):
                 best = root
                 bestname = n
                 bestpage = u[len(root):]
     if best:
-        print bestname, bestpage
         return bestname, bestpage
-    print "->", None
 
 try:
     opts, args = getopt.getopt(argv[1:], "+c: denpul U t m:k: g: c: h?")
@@ -393,7 +388,6 @@ for k, v in opts:
         config_name, page = open(os.path.expanduser("~/.aetherlast")).read().split()
         args.insert(0, page)
 
-print config_name
 if config_name is None and args:
     parsed = parse_url(args[0])
     if parsed is not None:
