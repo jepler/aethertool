@@ -21,11 +21,12 @@ import getopt, cgi, re, disorient
 import shutil, atexit
 from sys import argv
 from htmlentitydefs import name2codepoint
+import Image
 
 EDITOR = os.environ.get("EDITOR", "vim")
 
-thumb_geometry = "300x300"
-medium_geometry = "900x900"
+thumb_geometry = (300, 300)
+medium_geometry = (900, 900)
 
 config = {}
 default_config = 'default'
@@ -36,6 +37,11 @@ def add_config(name, root, password=None, thumb_geometry=None, alternates=[]):
 def set_default(name):
     global default_config
     default_config = name
+
+def decode_geometry(s):
+    if isinstance(s, str):
+        s =  tuple(map(int, s.split("x")))
+    return s
 
 def load_config(name):
     c = config[name]
@@ -292,6 +298,33 @@ def optimize(f):
     # XXX convert gif to png?
     return f
 
+def resize(geometry, tag, src):
+    print "resize", geometry, tag, src
+    geometry = decode_geometry(geometry)
+    ext = os.path.splitext(src)[1]
+    local = os.path.join(tempdir, "thumb" + ext)
+    localjpg = os.path.join(tempdir, "thumb" + ".jpg")
+
+    i = Image.open(src)
+    if i.size[0] < geometry[0] and i.size[1] < geometry[1]:
+        print "size fail", i.size, geometry
+        return None
+
+    if i.mode == 'P':
+        i = i.convert('RGB')
+    i.thumbnail(geometry, Image.ANTIALIAS)
+    
+    i.save(local)
+    local = optimize(local)
+    if localjpg != local:
+        i.save(localjpg)
+        localjpg = optimize(localjpg)
+        
+        print os.stat(localjpg).st_size,  os.stat(local).st_size
+        if os.stat(localjpg).st_size < .9 * os.stat(local).st_size:
+            local = localjpg
+    return local
+
 tempdir = tempfile.mkdtemp()
 atexit.register(shutil.rmtree, tempdir)
 
@@ -317,7 +350,8 @@ Usage:
     %(name)s -c configname [other usage from above]
         Use the configuration 'configname' instead of the default
         For help on the syntax of configuration files, use "-c help".
-""" % {'name': os.path.basename(sys.argv[0]), 'thumbsize': thumb_geometry}
+""" % {'name': os.path.basename(sys.argv[0]),
+       'thumbsize': "%dx%d" % thumb_geometry}
     raise SystemExit, exitcode
 
 def help_config():
@@ -416,33 +450,15 @@ elif mode == MODE_UPLOAD:
         if do_thumbnail and isimage(remote):
             base, ext = os.path.splitext(remote)
 
-            localmed = os.path.join(tempdir, "medium" + ext)
-            localmedjpg = os.path.join(tempdir, "medium" + ".jpg")
-            #print "Creating medium image for", remote
-            os.spawnvp(os.P_WAIT, "convert", 
-                ["convert", "-geometry", medium_geometry, local, localmed])
-            if localmed != localmedjpg:
-                os.spawnvp(os.P_WAIT, "convert", 
-                    ["convert", "-geometry", medium_geometry, local, localmedjpg])
-                if os.stat(localmed).st_size > os.stat(localmedjpg).st_size:
-                    localmed = localmedjpg
-            localmed = optimize(localmed)
-            med = base + "-medium" + os.path.splitext(localmed)[1]
-            upload_file(page, localmed, med)
+            localmed = resize(medium_geometry, "medium", local)
+            if localmed:
+                med = base + "-medium" + os.path.splitext(localmed)[1]
+                upload_file(page, localmed, med)
 
-            localthumb = os.path.join(tempdir, "thumb" + ext)
-            localthumbjpg = os.path.join(tempdir, "thumb" + ".jpg")
-            #print "Creating thumbnail for", remote
-            os.spawnvp(os.P_WAIT, "convert", 
-                ["convert", "-geometry", thumb_geometry, local, localthumb])
-            if localthumb != localthumbjpg:
-                os.spawnvp(os.P_WAIT, "convert", 
-                    ["convert", "-geometry", thumb_geometry, local, localthumbjpg])
-                if os.stat(localthumb).st_size > os.stat(localthumbjpg).st_size:
-                    localthumb = localthumbjpg
-            localthumb = optimize(localthumb)
-            thumb = base + "-small" + os.path.splitext(localthumb)[1]
-            upload_file(page, localthumb, thumb)
+            localthumb = resize(thumb_geometry, "thumb", local)
+            if localthumb:
+                thumb = base + "-thumb" + os.path.splitext(localthumb)[1]
+                upload_file(page, localthumb, thumb)
 
 elif mode == MODE_NEW_ENTRY:
     if args:

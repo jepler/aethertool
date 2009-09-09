@@ -20,7 +20,10 @@ def require_program(s):
     print "The software will probably not work without it."
     return False
 
-for p in ("pngcrush", "jpegtran", "convert"):
+for m in ("Image",):
+    require_module(m)
+
+for p in ("pngcrush", "jpegtran"):
     require_program(p)
 
 setup(name="aethertool", version="0.6",
