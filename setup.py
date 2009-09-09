@@ -26,7 +26,7 @@ for m in ("Image",):
 for p in ("pngcrush", "jpegtran"):
     require_program(p)
 
-setup(name="aethertool", version="0.6",
+setup(name="aethertool", version="0.7",
     author="Jeff Epler", author_email = "jepler@unpythonic.net",
     py_modules=['disorient', 'ClientForm'],
     scripts=['aethertool'],

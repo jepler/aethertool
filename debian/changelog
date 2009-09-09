@@ -1,4 +1,20 @@
-aethertool (0) unstable; urgency=low
+aethertool (0.7) unstable; urgency=low
+
+  * Make suffix for blog entry names optional
+  * Fixes for non-ASCII page contents
+  * Include clientform in the distribution
+  * New '-U' mode prints edit URL
+  * Produce medium (default: 900x900) reduced images
+  * Don't produce thumbs or medium images if the original is smaller (in pixels)
+  * Produce thumbs or medium images as jpg if is smaller than original type
+    (in bytes)
+  * Allow URLs without index.cgi
+  * Speed up adding attachments to pages with many attachments
+  * Allow specification of site by URL instead of site identifier
+
+ -- Jeff Epler <jepler@unpythonic.net>  Tue, 08 Sep 2009 21:15:11 -0500
+
+aethertool (0.6) unstable; urgency=low
 
   * Initial release.
 
