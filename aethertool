@@ -455,9 +455,9 @@ elif mode == MODE_UPLOAD:
                 med = base + "-medium" + os.path.splitext(localmed)[1]
                 upload_file(page, localmed, med)
 
-            localthumb = resize(thumb_geometry, "thumb", local)
+            localthumb = resize(thumb_geometry, "small", local)
             if localthumb:
-                thumb = base + "-thumb" + os.path.splitext(localthumb)[1]
+                thumb = base + "-small" + os.path.splitext(localthumb)[1]
                 upload_file(page, localthumb, thumb)
 
 elif mode == MODE_NEW_ENTRY:
