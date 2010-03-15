@@ -19,6 +19,7 @@
 import getpass, urllib2, ClientForm, tempfile, os, time, webbrowser, sys
 import getopt, cgi, re, disorient
 import shutil, atexit
+import urllib
 from sys import argv
 from htmlentitydefs import name2codepoint
 import Image
@@ -139,7 +140,8 @@ def webbrowser_open(u):
     time.sleep(browser_wait)
 
 def get_edit_url(page):
-    return AETHER_TOP + "?action=edit&password=%s&name=%s" % (PASS, page)
+    pw = urllib.quote(PASS)
+    return AETHER_TOP + "?action=edit&password=%s&name=%s" % (pw, page)
 
 def get_edit_form(page):
     url = get_edit_url(page)
