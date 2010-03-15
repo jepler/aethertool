@@ -1,3 +1,9 @@
+aethertool (0.8) karmic; urgency=low
+
+  * fix problem with special chars in passwords
+
+ -- jepler <jepler@unpythonic.net>  Mon, 15 Mar 2010 17:48:01 -0500
+
 aethertool (0.7) unstable; urgency=low
 
   * Make suffix for blog entry names optional
