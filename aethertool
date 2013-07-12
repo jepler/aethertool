@@ -189,7 +189,7 @@ def save_text(page, newtext):
 def preview_text(page, newtext):
     return """<HTML>
     <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <BODY onload="document.forms[0].submit()"
+    <BODY onload="document.forms[0].submit()">
     <DIV style="display: none">
     <FORM method=post accept-charset=\"UTF-8\" action=\"%s#buttonsandpreview\">
         <input type=hidden name=action value=edit>
