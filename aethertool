@@ -318,7 +318,7 @@ def resize(geometry, tag, src):
     
     i.save(local)
     local = optimize(local)
-    if localjpg != local:
+    if localjpg != local and allow_jpg:
         i.save(localjpg)
         localjpg = optimize(localjpg)
         
@@ -392,7 +392,7 @@ def parse_url(u):
         return bestname, bestpage
 
 try:
-    opts, args = getopt.getopt(argv[1:], "+c: denpul U t m:k: g: c: h?")
+    opts, args = getopt.getopt(argv[1:], "+c: denpul U tj m:k: g: c: h?")
 except getopt.GetoptError, detail:
     print >> sys.stderr, "%s:" % os.path.basename(sys.argv[0]), detail
     usage()
@@ -402,6 +402,7 @@ MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE, MODE_URL = range(
 mode = MODE_EDIT
 suffix = ""
 do_thumbnail = True
+allow_jpg = True
 
 for k, v in opts:
     if k == "-c": config_name = v
@@ -415,6 +416,7 @@ for k, v in opts:
     if k == "-U": mode = MODE_URL
 
     if k == "-t": do_thumbnail = not do_thumbnail
+    if k == "-j": allow_jpg = not allow_jpg
     if k == "-k": suffix = "-" + v.replace(" ", "-")
     if k == "-g": thumb_geometry = v
     if k == "-m": medium_geometry = v
