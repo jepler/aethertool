@@ -430,7 +430,7 @@ if config_name is None and args:
     parsed = parse_url(args[0])
     if parsed is not None:
         config_name, args[0] = parsed
-else:
+elif args:
     parsed = parse_url(args[0])
     if parsed is not None:
         parsed_config_name, args[0] = parsed
