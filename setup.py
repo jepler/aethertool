@@ -29,7 +29,7 @@ for p in ("pngcrush", "jpegtran"):
 setup(name="aethertool", version="0.7",
     author="Jeff Epler", author_email = "jepler@unpythonic.net",
     py_modules=['disorient'],
-    scripts=['aethertool'],
+    scripts=['aether'],
     url="http://emergent.unpy.net/software/aethertool/",
     license="GPL",
 )
