@@ -210,6 +210,7 @@ def preview_text(page, newtext):
     cgi.escape(newtext, True))
 
 def upload_file(page, local, remote, quiet=0):
+    if page.startswith("http"): raise SystemExit, "URL vs path confusion, page=%s" % page
     qPASS = quote_paranoid(PASS)
     qpage = quote_paranoid(page)
     url = AETHER_TOP
@@ -428,6 +429,12 @@ if config_name is None and args:
     parsed = parse_url(args[0])
     if parsed is not None:
         config_name, args[0] = parsed
+else:
+    parsed = parse_url(args[0])
+    if parsed is not None:
+        parsed_config_name, args[0] = parsed
+        if parsed_config_name != config_name:
+           raise SystemExit, "URL points to site %s, but you asked for %s" % (parsed_config_name, config_name)
 if config_name is None: config_name = default_config
 
 if config_name == "help":
