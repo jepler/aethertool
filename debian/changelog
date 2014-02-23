@@ -1,3 +1,15 @@
+aethertool (0.9.1) squeeze; urgency=low
+
+  * Upgrade from ClientForm to mechanize
+
+ -- jepler <jepler@platte.unpythonic.net>  Sat, 07 Apr 2012 20:45:24 -0500
+
+aethertool (0.9) squeeze; urgency=low
+
+  * cooperate with python-clientform package
+
+ -- jepler <jepler@unpythonic.net>  Mon, 15 Mar 2010 17:48:01 -0500
+
 aethertool (0.8) karmic; urgency=low
 
   * fix problem with special chars in passwords

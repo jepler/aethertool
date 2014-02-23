@@ -16,13 +16,14 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import getpass, urllib2, ClientForm, tempfile, os, time, webbrowser, sys
+import getpass, urllib2, tempfile, os, time, webbrowser, sys
 import getopt, cgi, re, disorient
 import shutil, atexit
 import urllib
 from sys import argv
 from htmlentitydefs import name2codepoint
 import Image
+import mechanize as ClientForm
 
 EDITOR = os.environ.get("EDITOR", "vim")
 
