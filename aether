@@ -122,7 +122,6 @@ import urlparse
 
 def posturl(url, fields, files):
     urlparts = urlparse.urlsplit(url)
-    print "posturl", url, urlparts
     return post_multipart(url, fields,files)
 
 def webbrowser_open(u):
