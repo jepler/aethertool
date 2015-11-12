@@ -1,3 +1,15 @@
+aethertool (0.9.4) testing; urgency=medium
+
+  * Debian jessie moved my cheese
+
+ -- jepler <jepler@babs.unpythonic.net>  Wed, 11 Mar 2015 21:19:58 -0500
+
+aethertool (0.9.3) stable; urgency=medium
+
+  * Fix -n bug
+
+ -- jepler <jepler@babs.unpythonic.net>  Sat, 22 Feb 2014 21:22:02 -0600
+
 aethertool (0.9.2) stable; urgency=medium
 
   * Improvements

@@ -7,7 +7,7 @@ XS-Python-Version: current
 Standards-Version: 2.0.0-rc
 
 Package: aethertool
-Depends: libjpeg-progs, pngcrush, imagemagick, python, python-mechanize, python-imaging
+Depends: libjpeg-turbo-progs, pngcrush, imagemagick, python, python-mechanize, python-imaging
 Section: web
 Architecture: all
 Description: commandline upload tool for aether cms
