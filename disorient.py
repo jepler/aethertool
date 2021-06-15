@@ -105,6 +105,6 @@ if __name__ == '__main__':
     import sys
     if sys.argv[1] == "-c":
         clear_exif_orientation(sys.argv[2]) 
-        print "Orientation cleared"
-    else: print descr.get(exif_orientation(sys.argv[1]), "Invalid orientation")
+        print("Orientation cleared")
+    else: print(descr.get(exif_orientation(sys.argv[1]), "Invalid orientation"))
 # vim:sw=4:sts=4:et

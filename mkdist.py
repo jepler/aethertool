@@ -53,15 +53,15 @@ def main(args):
     if len(args) == 1:
         version = args[0]
     elif len(args) > 1:
-        raise SystemExit, "Usage: %s [version]" % sys.argv[0]
+        raise SystemExit("Usage: %s [version]" % sys.argv[0])
     else:
         status, gitversion = commands.getstatusoutput("git-describe --tags")
         version = highest_version()
         if status != 0 or version != gitversion:
-            raise SystemExit, """\
+            raise SystemExit("""\
 Highest version %r doesn't match description %r.
 Specify version number explicitly if this is what you want""" % (
-                    version, gitversion)
+                    version, gitversion))
 
     version = version.lstrip("v")
 

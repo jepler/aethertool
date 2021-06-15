@@ -1,3 +1,9 @@
+aethertool (0.9.5+nmu1) stable; urgency=medium
+
+  * Remove debug print
+
+ -- jepler <jepler@babs.unpythonic.net>  Wed, 11 Nov 2015 21:45:51 -0600
+
 aethertool (0.9.5) stable; urgency=low
 
   * Fix file uploads with https

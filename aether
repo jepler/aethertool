@@ -16,14 +16,19 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import getpass, urllib2, tempfile, os, time, webbrowser, sys
+import getpass, urllib.parse, urllib.request, urllib.error, tempfile, os, time, webbrowser, sys
 import getopt, cgi, re, disorient
 import shutil, atexit
-import urllib
+import urllib, html
 from sys import argv
-from htmlentitydefs import name2codepoint
-import Image
+from html.entities import name2codepoint
+from PIL import Image
 import mechanize as ClientForm
+
+def execfile(fn):
+    with open(fn) as f: content = f.read()
+    print("exec", content)
+    exec(content, globals(), globals())
 
 EDITOR = os.environ.get("EDITOR", "vim")
 
@@ -55,13 +60,13 @@ def load_config(name):
 rcfile = os.path.join(os.environ.get('HOME', ''), ".aetherrc")
 if os.path.exists(rcfile): execfile(rcfile)
 else:
-    print ("The configuration file %r does not exist.\n"
+    print("The configuration file %r does not exist.\n"
            "aethertool cannot run without it." % rcfile)
     raise SystemExit
 
 config_name = os.path.splitext(os.path.split(sys.argv[0])[1])[0]
 if len(config) == 1: default_config = config.keys()[0]
-if not config.has_key(config_name): config_name = None
+if config_name not in config: config_name = None
 
 def quote_paranoid(text):
     """ Convert utf-8 string to sequence of lower case English characters. """
@@ -85,8 +90,8 @@ def post_multipart(url, fields, files):
     """
     content_type, data = encode_multipart_formdata(fields, files)
     headers = { 'Content-Type': content_type }
-    request = urllib2.Request(url, data=data, headers=headers)
-    f = urllib2.urlopen(request)
+    request = urllib.Request(url, data=data, headers=headers)
+    f = urllib.request.urlopen(request)
     return f.read()
 
 def encode_multipart_formdata(fields, files):
@@ -118,10 +123,9 @@ def encode_multipart_formdata(fields, files):
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-import urlparse
 
 def posturl(url, fields, files):
-    urlparts = urlparse.urlsplit(url)
+    urlparts = urllib.parse.urlsplit(url)
     return post_multipart(url, fields,files)
 
 def webbrowser_open(u):
@@ -129,13 +133,13 @@ def webbrowser_open(u):
     time.sleep(browser_wait)
 
 def get_edit_url(page):
-    pw = urllib.quote(PASS)
+    pw = urllib.parse.quote(PASS)
     return AETHER_TOP + "?action=edit&password=%s&name=%s" % (pw, page)
 
 def get_edit_form(page):
     url = get_edit_url(page)
 
-    forms = ClientForm.ParseResponse(urllib2.urlopen(url))
+    forms = ClientForm.ParseResponse(urllib.request.urlopen(url))
     for f in forms:
         try:
             action = f.get_value("action")
@@ -143,17 +147,17 @@ def get_edit_form(page):
             continue
         if action == "edit":
             return f
-    print "Required form not found.  AETHER_TOP or password may be incorrect."
+    print("Required form not found.  AETHER_TOP or password may be incorrect.")
 
 entity_re = re.compile("&(#[0-9]+|[a-zA-Z0-9]+);?")
 
 def unescape_replace(m):
     g = m.group(1)
     if g.startswith("#"):
-        return unichr(int(g[1:])).encode('utf-8')
+        return chr(int(g[1:]))
     codepoint = name2codepoint.get(g)
     if codepoint is None: return g
-    return unichr(codepoint).encode('utf-8')
+    return chr(codepoint)
 
 def unescape(s):
     return entity_re.sub(unescape_replace, s)
@@ -165,7 +169,7 @@ current_text_pat = re.compile(
 
 def get_current_text(page):
     url = get_edit_url(page)
-    page = urllib2.urlopen(url).read()
+    page = urllib.request.urlopen(url).read().decode("utf-8", errors="replace")
     m = current_text_pat.search(page).group(1)
     m = unescape(m)
     return m
@@ -192,14 +196,14 @@ def preview_text(page, newtext):
     </DIV>
     Submitting updated text...
     </body>""" % (
-    cgi.escape(AETHER_TOP, True),
-    cgi.escape(PASS, True),
-    cgi.escape(page, True),
-    cgi.escape(page, True),
-    cgi.escape(newtext, True))
+    html.escape(AETHER_TOP, True),
+    html.escape(PASS, True),
+    html.escape(page, True),
+    html.escape(page, True),
+    html.escape(newtext, True))
 
 def upload_file(page, local, remote, quiet=0):
-    if page.startswith("http"): raise SystemExit, "URL vs path confusion, page=%s" % page
+    if page.startswith("http"): raise SystemExit("URL vs path confusion, page=%s" % page)
     qPASS = quote_paranoid(PASS)
     qpage = quote_paranoid(page)
     url = AETHER_TOP
@@ -207,12 +211,12 @@ def upload_file(page, local, remote, quiet=0):
     fdata = [('file', remote, open(local, "rb").read())]
     posturl(url, data, fdata)
     if not quiet:
-        print "Uploaded file is:"
-        print "   [page %s] [file %s]" % (page, remote)
+        print("Uploaded file is:")
+        print("   [page %s] [file %s]" % (page, remote))
         if AETHER_TOP.endswith("/"):
-            print "   " + AETHER_TOP + "files/%s/%s" % (page, remote)
+            print("   " + AETHER_TOP + "files/%s/%s" % (page, remote))
         else:
-            print "   " + AETHER_TOP + "-files/%s/%s" % (page, remote)
+            print("   " + AETHER_TOP + "-files/%s/%s" % (page, remote))
 
 def put_page(page, filename):
     if hasattr(filename, 'read'):
@@ -221,11 +225,11 @@ def put_page(page, filename):
         contents = ''
     else:
         contents = open(filename).read()
-    print "size of new contents", len(contents)
+    print("size of new contents", len(contents))
     u = save_text(page, contents)
     try:
-        urllib2.urlopen(u)
-    except urllib2.HTTPError, detail:
+        urllib.request.urlopen(u)
+    except urllib.error.HTTPError as detail:
         if detail.code != 404 or contents:
             raise
 
@@ -291,7 +295,7 @@ def optimize(f):
     return f
 
 def resize(geometry, tag, src):
-    print "resize", geometry, tag, src
+    print("resize", geometry, tag, src)
     geometry = decode_geometry(geometry)
     ext = os.path.splitext(src)[1]
     local = os.path.join(tempdir, "thumb" + ext)
@@ -299,7 +303,7 @@ def resize(geometry, tag, src):
 
     i = Image.open(src)
     if i.size[0] < geometry[0] and i.size[1] < geometry[1]:
-        print "size fail", i.size, geometry
+        print("size fail", i.size, geometry)
         return None
 
     if i.mode == 'P':
@@ -312,7 +316,7 @@ def resize(geometry, tag, src):
         i.save(localjpg)
         localjpg = optimize(localjpg)
         
-        print os.stat(localjpg).st_size,  os.stat(local).st_size
+        print(os.stat(localjpg).st_size,  os.stat(local).st_size)
         if os.stat(localjpg).st_size < .9 * os.stat(local).st_size:
             local = localjpg
     return local
@@ -321,7 +325,7 @@ tempdir = tempfile.mkdtemp()
 atexit.register(shutil.rmtree, tempdir)
 
 def usage(exitcode=1):
-    print """\
+    print("""\
 Usage:
     %(name)s [-e] page
         Edit 'page'.  Use '/' (forward slash) to edit the front page.  To
@@ -343,11 +347,11 @@ Usage:
         Use the configuration 'configname' instead of the default
         For help on the syntax of configuration files, use "-c help".
 """ % {'name': os.path.basename(sys.argv[0]),
-       'thumbsize': "%dx%d" % thumb_geometry}
-    raise SystemExit, exitcode
+       'thumbsize': "%dx%d" % thumb_geometry})
+    raise SystemExit(exitcode)
 
 def help_config():
-    print """\
+    print("""\
 The configuration file ~/.aetherrc is a python script.  A typical one might 
 look like this (without the indentation):
     add_config('configname', 'http://www.example.com/index.cgi', 'password')
@@ -357,13 +361,13 @@ given by set_default is used.  If only one call to add_configuration is
 present, then that configuration is the default.
 
 If 'password' is not specified, then it is prompted when the script is run.
-"""
-    print "The following configurations are defined:"
-    for k in config: print "\t" + k
-    print
-    print "When invoked as '%s', the default configuration is '%s'" % (
-        os.path.basename(sys.argv[0]), default_config)
-    raise SystemExit, 0
+""")
+    print("The following configurations are defined:")
+    for k in config: print("\t" + k)
+    print()
+    print("When invoked as '%s', the default configuration is '%s'" % (
+        os.path.basename(sys.argv[0]), default_config))
+    raise SystemExit(0)
 
 def parse_url(u):
     best = ''
@@ -383,8 +387,8 @@ def parse_url(u):
 
 try:
     opts, args = getopt.getopt(argv[1:], "+c: denpul U tj m:k: g: c: h?")
-except getopt.GetoptError, detail:
-    print >> sys.stderr, "%s:" % os.path.basename(sys.argv[0]), detail
+except getopt.GetoptError as detail:
+    print(os.path.basename(sys.argv[0]), detail, file=sys.stderr)
     usage()
 
 MODE_EDIT, MODE_NEW_ENTRY, MODE_PUT, MODE_UPLOAD, MODE_DELETE, MODE_URL = range(6)
@@ -425,7 +429,7 @@ elif args:
     if parsed is not None:
         parsed_config_name, args[0] = parsed
         if parsed_config_name != config_name:
-           raise SystemExit, "URL points to site %s, but you asked for %s" % (parsed_config_name, config_name)
+           raise SystemExit("URL points to site %s, but you asked for %s" % (parsed_config_name, config_name))
 if config_name is None: config_name = default_config
 
 if config_name == "help":
@@ -434,7 +438,7 @@ if config_name == "help":
 load_config(config_name)
 
 if mode == MODE_URL:
-    print get_edit_url("")
+    print(get_edit_url(""))
 elif mode == MODE_UPLOAD:
     page = args[0]
     for filename in args[1:]:
@@ -442,10 +446,10 @@ elif mode == MODE_UPLOAD:
             remote, local = filename.split("=", 1)
         else:
             remote = os.path.basename(filename)
-	    if not re.search('[a-z]', remote): remote = remote.lower()
+            if not re.search('[a-z]', remote): remote = remote.lower()
             local = filename
-	if isimage(remote):
-	    local = optimize(local)
+        if isimage(remote):
+            local = optimize(local)
         upload_file(page, local, remote)
         if do_thumbnail and isimage(remote):
             base, ext = os.path.splitext(remote)
