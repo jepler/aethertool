@@ -1,8 +1,2 @@
-.*.sw?
-data
-*.py[co]
-build
-dist
-debian/substvars
-debian/aethertool.files
-debian/aethertool
+dist/
+build/
